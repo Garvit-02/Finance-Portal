@@ -5,7 +5,7 @@
  */
 
 const Record = require('../models/Record');
-const { logEvent } = require('../utils/auditLogger');
+const auditService = require('./audit.service');
 
 /**
  * Create a new financial record.
@@ -21,13 +21,13 @@ const createRecord = async (userId, recordData) => {
 
     const savedRecord = await record.save();
 
-    // Log Creation
-    logEvent({
+    // Log Action
+    auditService.logAction({
         userId,
-        action: 'RECORD_CREATE',
-        resource: 'FinancialRecord',
-        resourceId: savedRecord._id,
-        details: { type: savedRecord.type, amount: savedRecord.amount }
+        action: 'CREATE_RECORD',
+        entity: 'RECORD',
+        entityId: savedRecord._id,
+        details: `Created ${savedRecord.type}: ${savedRecord.amount}`
     });
 
     return savedRecord;
@@ -117,13 +117,13 @@ const updateRecord = async (recordId, user, updateData) => {
     // 3. Perform the update and return the new document with validations
     const updatedRecord = await Record.findByIdAndUpdate(recordId, updateData, { new: true, runValidators: true });
 
-    // Log Update
-    logEvent({
+    // Log Action
+    auditService.logAction({
         userId: user.id,
-        action: 'RECORD_UPDATE',
-        resource: 'FinancialRecord',
-        resourceId: recordId,
-        details: { modifiedFields: Object.keys(updateData) }
+        action: 'UPDATE_RECORD',
+        entity: 'RECORD',
+        entityId: recordId,
+        details: `Updated fields: ${Object.keys(updateData).join(', ')}`
     });
 
     return updatedRecord;
@@ -155,13 +155,13 @@ const deleteRecord = async (recordId, user) => {
     // 3. Perform the deletion
     await record.deleteOne();
 
-    // Log Deletion
-    logEvent({
+    // Log Action
+    auditService.logAction({
         userId: user.id,
-        action: 'RECORD_DELETE',
-        resource: 'FinancialRecord',
-        resourceId: recordId,
-        details: { type: record.type, amount: record.amount, category: record.category }
+        action: 'DELETE_RECORD',
+        entity: 'RECORD',
+        entityId: recordId,
+        details: `Deleted ${record.type} record of ${record.amount}`
     });
 
     return { 

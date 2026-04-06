@@ -6,7 +6,7 @@
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { logEvent } = require('../utils/auditLogger');
+const auditService = require('./audit.service');
 
 /**
  * Register a new user in the system.
@@ -25,13 +25,13 @@ const registerUser = async (userData) => {
     // 2. Create the user (Password is hashed by Mongoose pre-save hook)
     const user = await User.create(userData);
 
-    // 3. Log the registration event
-    logEvent({
+    // 3. Log the registration action
+    auditService.logAction({
         userId: user._id,
-        action: 'REGISTER',
-        resource: 'User',
-        resourceId: user._id,
-        status: 'SUCCESS'
+        action: 'CREATE_RECORD',
+        entity: 'USER',
+        entityId: user._id,
+        details: 'New user registration'
     });
 
     // 4. Convert to object and remove password before returning
@@ -72,12 +72,13 @@ const loginUser = async (credentials) => {
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    // 4. Log the login event
-    logEvent({
+    // 4. Log the login action
+    auditService.logAction({
         userId: user._id,
         action: 'LOGIN',
-        resource: 'Auth',
-        status: 'SUCCESS'
+        entity: 'USER',
+        entityId: user._id,
+        details: `Successful login via ${email}`
     });
 
     return {

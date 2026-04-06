@@ -9,6 +9,7 @@ const recordController = require('../controllers/record.controller');
 const validate = require('../middleware/validate.middleware');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
+const { audit } = require('../middleware/audit.middleware');
 const { createRecordValidation, updateRecordValidation } = require('../validations/record.validation');
 
 const router = express.Router();
@@ -26,6 +27,7 @@ router.use(protect);
 router.post(
     '/', 
     authorize(['Admin', 'Analyst']), 
+    audit('CREATE_RECORD', 'RECORD'), // Automated auditing
     validate(createRecordValidation), 
     recordController.createRecord
 );
@@ -45,6 +47,7 @@ router.get('/', recordController.getRecords);
 router.put(
     '/:id', 
     authorize(['Admin', 'Analyst']), 
+    audit('UPDATE_RECORD', 'RECORD'), // Automated auditing
     validate(updateRecordValidation), 
     recordController.updateRecord
 );
@@ -57,6 +60,7 @@ router.put(
 router.delete(
     '/:id', 
     authorize(['Admin']), 
+    audit('DELETE_RECORD', 'RECORD'), // Automated auditing
     recordController.deleteRecord
 );
 

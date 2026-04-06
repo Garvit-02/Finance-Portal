@@ -1,126 +1,153 @@
 # Finance Data Processing and Access Control System
 
-A professional high-performance, role-based backend system designed for financial record management, data integrity, and dashboard-ready analytics.
+## 1. Project Title
 
-## 📖 1. Project Overview
-The **Finance Data Processing and Access Control System** is a secure backend solution for managing personal or business finances. It allows users to track income and expenses while ensuring that data is only accessible to authorized personnel. The system features a centralized dashboard that provides real-time financial insights through advanced data aggregation.
+Finance Data Processing and Access Control System
 
----
+## 2. Project Overview
 
-## ✨ 2. Features
--   **User Authentication (JWT)**: Secure login and registration using JSON Web Tokens.
--   **Role-Based Access Control (RBAC)**: Fine-grained permissions for **Admin**, **Analyst**, and **Viewer** roles.
--   **Financial Records Management (CRUD)**: Create, Read, Update, and Delete financial transactions.
--   **Filtering and Pagination**: Efficiently browse large datasets with dynamic filters (type, category, date) and paginated results.
--   **Dashboard Summary APIs**: Real-time KPIs including Total Income, Total Expenses, and Net Balance.
--   **MongoDB Aggregation**: Industrial-strength data processing for category breakdowns and monthly trends.
--   **Validation and Error Handling**: Strict data integrity using Joi validation and a centralized error response system.
--   **Clean Architecture**: Modular codebase following the Route-Middleware-Controller-Service-Model pattern.
+The Finance Data Processing and Access Control System is a robust backend API designed to securely manage financial records and provide analytical insights. The system accomplishes the following:
 
----
+- **Manage Financial Records:** Full CRUD (Create, Read, Update, Delete) support for tracking income and expense transactions.
+- **Role-Based Access Control (RBAC):** Strict access levels defining operational capabilities. Admins have complete system oversight, Analysts manage their own data and view analytics, and Viewers have read-only access to dashboard insights.
+- **Dashboard Analytics:** High-performance data aggregation delivering real-time metrics including total income, total expense, net balance, category totals, monthly trends, and recent transactions.
+- **Clean Architecture:** Built with a maintainable Controller → Service → Model (CSM) design pattern, ensuring separation of business logic, request handling, and data mapping.
 
-## 🛠️ 3. Tech Stack
--   **Node.js**: Standard cross-platform JavaScript runtime.
--   **Express.js**: Fast, unopinionated, minimalist web framework.
--   **MongoDB**: Document-oriented NoSQL database.
--   **Mongoose**: Elegant mongodb object modeling for node.js.
--   **JWT (jsonwebtoken)**: Secure identity propagation.
--   **Joi**: Powerful schema description language and data validator.
+## 3. Tech Stack
 
----
+- **Node.js**: JavaScript runtime environment for backend logic.
+- **Express.js**: Minimalist web framework for routing and middleware.
+- **MongoDB**: NoSQL database for flexible data storage.
+- **Mongoose**: Object Data Modeling (ODM) library for MongoDB.
+- **JWT Authentication**: Secure stateless user sessions.
+- **Joi Validation**: Schema description language for payload validation.
+- **Postman**: API development and testing framework.
 
-## 🗺️ 4. System Architecture
-The project follows a linear, decoupled data flow to ensure scalability and ease of testing:
+*Note: Security middlewares such as Helmet, Express Rate Limit, Mongo Sanitize, and XSS Clean are also configured for enterprise readiness.*
 
-**`Route`** (Endpoint Definition)  
-&nbsp;&nbsp;&nbsp;&nbsp;↓  
-**`Middleware`** (Auth, RBAC, & Validation)  
-&nbsp;&nbsp;&nbsp;&nbsp;↓  
-**`Controller`** (Request parsing & Response logic)  
-&nbsp;&nbsp;&nbsp;&nbsp;↓  
-**`Service`** (Core Business Logic & Workflows)  
-&nbsp;&nbsp;&nbsp;&nbsp;↓  
-**`Model`** (Database Schema & Persistence)  
-&nbsp;&nbsp;&nbsp;&nbsp;↓  
-**`Database`** (MongoDB Storage)
+## 4. System Architecture
 
----
+The application implements a **Clean Architecture** allowing strict decoupling of concerns.
 
-## 🚀 5. API Endpoints Summary
+**Request Flow:**
+`Route → Middleware → Controller → Service → Model → Database`
 
-### Authentication
-- `POST /api/v1/auth/register` - Create a new account.
+1. **Route:** Directs the endpoint to the correct controller.
+2. **Middleware:** Handles JWT Authentication, RBAC, Data Validation (Joi), and Security headers before reaching the controller.
+3. **Controller:** Extracts the request payload (`req.body`, `req.user`, `req.params`) and passes the data to the Service.
+4. **Service:** Executes core business logic and data manipulation.
+5. **Model:** Interacts with the database using Mongoose schemas.
+6. **Database:** Executes the final MongoDB operations.
+
+## 5. Database Schema
+
+### Users Collection
+Tracks the identity and access privileges of system users.
+- `name` (String): Full name of the user.
+- `email` (String, Unique): Contact email, used for login.
+- `password` (String): Hashed securely using `bcryptjs`.
+- `role` (String): Enumerated access level (`Admin`, `Analyst`, `Viewer`).
+
+### Financial Records Collection
+Stores all income and expense transaction data.
+- `userId` (ObjectId, ref 'User'): Establishes the owner of the record.
+- `type` (String): Transaction type (`Income`, `Expense`).
+- `amount` (Number): Financial value of the transaction.
+- `category` (String): Classification of the transaction (e.g., `Salary`, `Food`, `Rent`).
+- `note` (String, Optional): Additional context for the record.
+- `date` (Date): The date the transaction occurred (Defaults to current date).
+
+*Note: The `AuditLog` collection also exists to track system-wide events.*
+
+## 6. Role-Based Access Control
+
+The RBAC implementation ensures principle of least privilege:
+
+- **Admin:** Full access. Can create, read, update, and delete any user's records. Can view global dashboard analytics and system security audit logs.
+- **Analyst:** Read records + dashboard. Can create, read, and update strictly their *own* financial records. Can view their own personalized dashboard analytics.
+- **Viewer:** Only dashboard. Can view their personalized dashboard analytics and their own records if present, but cannot create, update, or delete any data.
+
+## 7. API Endpoints
+
+### Auth
+- `POST /api/v1/auth/register` - Create a new user.
 - `POST /api/v1/auth/login` - Authenticate and receive a JWT.
 
-### Financial Records
-- `GET /api/v1/records` - Retrieve filtered transactions.
-- `POST /api/v1/records` - Create a new transaction.
+### Records
+- `POST /api/v1/records` - Create a new financial record.
+- `GET /api/v1/records` - Retrieve paginated and filtered records.
 - `PUT /api/v1/records/:id` - Update an existing record.
-- `DELETE /api/v1/records/:id` - Permanently remove a record (Admin only).
+- `DELETE /api/v1/records/:id` - Delete a financial record.
 
-### Dashboard & Analytics
-- `GET /api/v1/dashboard/summary` - Total financial KPIs.
-- `GET /api/v1/dashboard/category` - Breakdown by category.
-- `GET /api/v1/dashboard/trends` - Last 6 months activity.
-- `GET /api/v1/dashboard/recent` - Last 5 activities.
+### Dashboard
+- `GET /api/v1/dashboard/summary` - Get total income, expense, and net balance.
+- `GET /api/v1/dashboard/category` - Get sub-totals grouped by category.
+- `GET /api/v1/dashboard/trends` - Get monthly aggregation over the last 6 months.
+- `GET /api/v1/dashboard/recent` - Fetch the 5 most recent transactions.
 
----
+*(Additional endpoints exist for System Auditing and CSV Export.)*
 
-## 🔐 6. Role Permissions Table
+## 8. Setup Instructions
 
-| Feature | Admin | Analyst | Viewer |
-| :--- | :---: | :---: | :---: |
-| **Create Records** | ✅ | ✅ | ❌ |
-| **Update Records** | ✅ | ✅ (Own) | ❌ |
-| **Delete Records** | ✅ | ❌ | ❌ |
-| **Read Records** | ✅ (All) | ✅ (Own) | ✅ (Own) |
-| **Analytics** | ✅ (Global) | ✅ (Own) | ✅ (Summary Only) |
+Steps to run the project locally:
 
----
+1. Clone the repository and navigate into the project root.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory (use `.env.example` as a template).
+4. Start the application in development mode:
+   ```bash
+   npm run dev
+   ```
 
-## 📦 7. Setup Instructions
+## 9. Environment Variables
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone <repository_url>
-    cd finance-portal
-    ```
-2.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
-3.  **Configure Environment**:
-    Create a `.env` file in the root directory (refer to Section 8).
-4.  **Start the Server**:
-    -   Development: `npm run dev` (uses nodemon)
-    -   Production: `npm start`
+Configure the following variables in your `.env` file:
 
----
+- `PORT` - The port number for the server (e.g., 5001).
+- `MONGO_URI` - Your MongoDB connection string.
+- `JWT_SECRET` - A strong secret key used for signing JWT tokens.
 
-## ⚡ 8. Environment Variables
-Create a `.env` file with the following keys:
-```env
-PORT=5001
-MONGODB_URI=mongodb://127.0.0.1:27017/finance-portal
-JWT_SECRET=your_super_secret_key_here
-JWT_EXPIRES_IN=7d
+## 10. Postman Collection
+
+A robust, pre-configured Postman collection is included in the project for seamless API testing. 
+
+You can find the collection file here:
+`tests/Finance-API.postman_collection.json`
+
+Import this file into your Postman workspace to begin testing immediately. Variables like `token` are automatically populated by the Login request's test scripts.
+
+## 11. Folder Structure
+
+```text
+finance-portal/
+├── config/              # Database connection setup
+├── docs/                # Detailed markdown documentation
+├── src/
+│   ├── controllers/     # Request handlers
+│   ├── middleware/      # Auth, RBAC, Validation & Security
+│   ├── models/          # Mongoose schemas
+│   ├── routes/          # Express route definitions
+│   ├── services/        # Core business logic
+│   ├── utils/           # Helper functions & API responses
+│   ├── validations/     # Joi validation schemas
+│   └── app.js           # Express App instantiation
+├── tests/               # Postman API collections
+├── .env.example         # Environment variable template
+├── .gitignore           # Ignored files
+├── package.json         # Project dependencies
+├── README.md            # You are here
+└── server.js            # Server entry point
 ```
 
----
+## 12. Assumptions
 
-## 📝 9. Assumptions
--   **User Roles**: It is assumed that roles are assigned during registration or by an administrator.
--   **Currency**: All amounts are handled as generic numeric values; currency symbol handling is left to the frontend.
--   **Timezone**: All dates are stored and processed in UTC.
+- **Role Inheritance**: Assume roles are strictly segregated instead of inheriting. An Analyst cannot do everything an Admin can do, they are restricted to their own isolated data scope.
+- **Dashboard Calculations**: The Net Balance calculation implicitly assumes that all `Income` amounts are positive inflows and all `Expense` amounts are positive outflows, calculating Net Balance as `(Total Income - Total Expense)`.
+- **Date Filtering**: All dashboard analytics (except where strictly monthly) and record fetching assume standard ISODate formats for precise filtering.
 
----
+## 13. Author
 
-## 🔮 10. Future Improvements
--   **Advanced Export**: Expand the CSV export to include PDF and Excel formats.
--   **Interactive Charts**: Integrate a frontend dashboard with Chart.js or Recharts.
--   **Recurring Transactions**: Automated logging for monthly subscriptions/salaries.
--   **Multi-Currency Support**: Integration with external exchange rate APIs.
-
----
-
-**Developed with Clean Architecture Principles for high reliability and scalability.**
+**Garvit Gupta**

@@ -7,6 +7,7 @@
 const express = require('express');
 const exportController = require('../controllers/export.controller');
 const { protect } = require('../middleware/auth.middleware');
+const { authorize } = require('../middleware/rbac.middleware');
 
 const router = express.Router();
 
@@ -16,10 +17,15 @@ const router = express.Router();
 router.use(protect);
 
 /**
- * @route   GET /api/v1/export/csv
+ * @route   GET /api/v1/export/records
  * @desc    Export financial records to a downloadable CSV file
- * @access  Private
+ * @access  Private (Admin, Analyst)
  */
-router.get('/csv', exportController.exportCSV);
+const exportHandler = exportController.exportRecords;
+if (!exportHandler) {
+    throw new Error('[Critical] exportController.exportRecords is undefined in export.routes.js');
+}
+
+router.get('/records', authorize(['Admin', 'Analyst']), exportHandler);
 
 module.exports = router;

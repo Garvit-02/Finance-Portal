@@ -1,7 +1,7 @@
 /**
  * @file AuditLog.js
- * @description Mongoose schema for Tracking system-wide activity.
- * Records sensitive actions (Login, Create, Update, Delete) for security and compliance.
+ * @description Mongoose schema for tracking system-wide activity and security events.
+ * Records sensitive actions like record creation, updates, and login events.
  */
 
 const mongoose = require('mongoose');
@@ -10,59 +10,46 @@ const auditLogSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: [true, 'User ID is required for an audit log'],
+        required: [true, 'User ID is required for an audit entry'],
         index: true
     },
     action: {
         type: String,
-        required: [true, 'Action type is required (e.g., LOGIN, RECORD_CREATE)'],
-        enum: [
-            'LOGIN', 
-            'LOGOUT', 
-            'REGISTER', 
-            'RECORD_CREATE', 
-            'RECORD_UPDATE', 
-            'RECORD_DELETE',
-            'SENSITIVE_DATA_ACCESS'
-        ]
+        required: [true, 'Action type is required'],
+        enum: ['CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD', 'LOGIN']
     },
-    resource: {
+    entity: {
         type: String,
-        required: [true, 'Resource name is required (e.g., FinancialRecord, User)']
+        required: [true, 'Entity name is required'],
+        enum: ['RECORD', 'USER']
     },
-    resourceId: {
+    entityId: {
         type: mongoose.Schema.Types.ObjectId,
+        required: false,
         default: null
     },
-    status: {
+    details: {
         type: String,
-        enum: ['SUCCESS', 'FAILED'],
-        default: 'SUCCESS'
+        required: false,
+        default: ''
     },
     ipAddress: {
         type: String,
+        required: false,
         default: 'Unknown'
     },
-    userAgent: {
-        type: String,
-        default: 'Unknown'
-    },
-    details: {
-        type: mongoose.Schema.Types.Mixed, // Stores JSON-like metadata about the change
-        default: {}
-    },
-    timestamp: {
+    createdAt: {
         type: Date,
         default: Date.now,
         index: true
     }
 }, {
-    timestamps: false, // We use a custom 'timestamp' field
+    timestamps: false, // We use custom 'createdAt' for immutability
     versionKey: false
 });
 
-// Optimization: Indexing for chronological system analysis per user
-auditLogSchema.index({ userId: 1, timestamp: -1 });
+// Optimization: Chronological indexing for performance audits
+auditLogSchema.index({ userId: 1, createdAt: -1 });
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 

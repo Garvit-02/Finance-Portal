@@ -5,9 +5,16 @@
 
 const express = require('express');
 const cors = require('cors');
+const securityMiddleware = require('./middleware/security.middleware');
 require('dotenv').config();
 
 const app = express();
+
+/**
+ * Security Middlewares
+ * Mount at the top for maximum protection.
+ */
+app.use(securityMiddleware);
 
 /**
  * Standard Middlewares
@@ -32,6 +39,7 @@ const authRoutes = require('./routes/auth.routes');
 const recordRoutes = require('./routes/record.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const exportRoutes = require('./routes/export.routes');
+const auditRoutes = require('./routes/audit.routes');
 const { protect } = require('./middleware/auth.middleware');
 
 // All API endpoints are prefixed with /api/v1/
@@ -39,6 +47,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/records', recordRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 /**
  * Protected Test Route
